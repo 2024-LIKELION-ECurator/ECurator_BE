@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
 
     # 앱
+    'emo_calendar',
 ]
 
 MIDDLEWARE = [
