@@ -47,3 +47,9 @@ class StoreAllMovies(APIView):
         for emotion in emotions:
             fetch_and_store_movies(emotion)
         return Response({"message": "Movies for all emotions have been fetched and stored."})
+
+# music api
+class FetchAllMusicView(APIView):
+    def post(self, request, *args, **kwargs):
+        fetch_and_store_all_music()  # 모든 감정에 대한 음악을 가져오기
+        return Response({'message': 'Successfully fetched music for all emotions.'}, status=status.HTTP_200_OK)

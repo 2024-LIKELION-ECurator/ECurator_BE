@@ -1,8 +1,12 @@
 import requests
 from .models import *
-from decouple import config
+from decouple import config # env 파일
 
+# 영화
 TMDB_API_KEY = config('TMDB_API_KEY')
+# 음악
+SPOTIFY_CLIENT_ID = config('SPOTIFY_CLIENT_ID')
+SPOTIFY_CLIENT_SECRET = config('SPOTIFY_CLIENT_SECRET')
 
 # 감정에 따른 키워드 정의
 EMOTION_KEYWORDS = {
@@ -123,3 +127,65 @@ def get_genre_names(genre_ids):
     
     genre_dict = {genre['id']: genre['name'] for genre in genres}
     return [genre_dict.get(genre_id, "Unknown") for genre_id in genre_ids]
+
+"""
+음악 API
+"""
+def get_spotify_token():
+    url = "https://accounts.spotify.com/api/token"
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    }
+    data = {
+        'grant_type': 'client_credentials',
+        'client_id': SPOTIFY_CLIENT_ID,
+        'client_secret': SPOTIFY_CLIENT_SECRET,
+    }
+    
+    response = requests.post(url, headers=headers, data=data)
+    response.raise_for_status()  # 요청 실패 시 예외 발생
+    return response.json()['access_token']
+
+def fetch_and_store_all_music():
+    emotions = Emotion.objects.all()  # 모든 감정 객체 가져오기
+    query_keywords = {
+        'happy': 'happy',
+        'sad': 'sad',
+        'surprised': 'surprise',
+        'loving': 'love',
+        'sleepy': 'calm',
+        'nervous': 'nervous',
+        'pensive': 'thoughtful',
+        'relieved': 'uplifting',
+        'joyful': 'joy'
+    }
+
+    token = get_spotify_token()
+
+    for emotion in emotions:
+        query = query_keywords.get(emotion.name)
+        if not query:
+            print(f"No query defined for emotion '{emotion.name}'.")
+            continue
+
+        url = f"https://api.spotify.com/v1/search?q={query}&type=track&market=KR&limit=40"
+        headers = {
+            'Authorization': f'Bearer {token}'
+        }
+
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # 요청 실패 시 예외 발생
+        results = response.json().get('tracks', {}).get('items', [])
+
+        for item in results:
+            title = item['name']
+            author = ', '.join(artist['name'] for artist in item['artists'])
+            
+            # 음악 객체 생성 및 저장
+            Music.objects.get_or_create(
+                title=title,
+                author=author,
+                emotion=emotion
+            )
+
+        print(f"Stored {len(results)} songs for emotion '{emotion.name}'.")
