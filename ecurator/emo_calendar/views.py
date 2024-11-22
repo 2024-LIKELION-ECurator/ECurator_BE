@@ -8,6 +8,7 @@ from django.db.models import Q
 
 from .models import *
 from .serializers import *
+from .utils import *
 
 """
 - 작성자 연결
@@ -38,3 +39,11 @@ class MyMoodHistoryView(APIView):
 
         serializer = MyMoodHistorySerializer(mood_history)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+# movie api
+class StoreAllMovies(APIView):
+    def post(self, request):
+        emotions = ["happy", "sad", "surprised", "loving", "sleepy", "nervous", "pensive", "relieved", "joyful"]
+        for emotion in emotions:
+            fetch_and_store_movies(emotion)
+        return Response({"message": "Movies for all emotions have been fetched and stored."})

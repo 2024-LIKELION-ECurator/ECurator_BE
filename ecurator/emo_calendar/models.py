@@ -24,17 +24,26 @@ class Music(models.Model):
     emotion = models.ForeignKey(Emotion, on_delete=models.CASCADE)
     api_source = models.CharField(max_length=100)
 
+    def __str__(self):
+        return f"{self.title}"
+
 class Movie(models.Model):
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=100)
     emotion = models.ForeignKey(Emotion, on_delete=models.CASCADE)
-    api_source = models.CharField(max_length=100)
+    genre = models.CharField(max_length=100, default="Unknown")
 
+    def __str__(self):
+        return f"{self.title}"
+    
 class Book(models.Model):
     title = models.CharField(max_length=200)
     author = models.CharField(max_length=100)
     emotion = models.ForeignKey(Emotion, on_delete=models.CASCADE)
     api_source = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.title}"
 
 class MyMoodHistory(models.Model):
     emotion = models.ForeignKey(Emotion, on_delete=models.CASCADE)
