@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q
 
 from .models import *
 from .serializers import *
@@ -12,15 +11,22 @@ from .utils import *
 
 """
 - 작성자 연결
-- 하루에 하나의 감정만 등록 가능하도록
 - 감정 update
 - 다이어리 끌어오기
+- is authen
+- 응답코드
 """
 
 class MyMoodHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, year, month):
-        emotions = MyMoodHistory.objects.filter(Q(date__year=year) & Q(date__month=month))
+        emotions = MyMoodHistory.objects.filter(
+            author=request.user,
+            date__year=year,
+            date__month=month
+        )
+
         serializer = MyMoodHistorySerializer(emotions, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -34,7 +40,14 @@ class MyMoodHistoryView(APIView):
         except Emotion.DoesNotExist:
             return Response({"error": "존재하지 않는 감정입니다."}, status=status.HTTP_404_NOT_FOUND)
 
-        mood_history = MyMoodHistory(emotion=emotion, date=date)
+        # 현재 로그인한 사용자의 해당 날짜 감정 기록 조회
+        user_mood_history = MyMoodHistory.objects.filter(author=request.user, date=date)
+
+        if user_mood_history.exists():
+            return Response({"error": "해당 날짜에 이미 감정이 기록되어 있습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 감정 기록 생성 및 저장
+        mood_history = MyMoodHistory(author=request.user, emotion=emotion, date=date)
         mood_history.save()
 
         serializer = MyMoodHistorySerializer(mood_history)
@@ -53,3 +66,9 @@ class FetchAllMusicView(APIView):
     def post(self, request, *args, **kwargs):
         fetch_and_store_all_music()  # 모든 감정에 대한 음악을 가져오기
         return Response({'message': 'Successfully fetched music for all emotions.'}, status=status.HTTP_200_OK)
+
+# book api
+class FetchAllBookView(APIView):
+    def post(self, request, *args, **kwargs):
+        fetch_and_store_books()  # 모든 감정에 대한 음악을 가져오기
+        return Response({'message': 'Successfully fetched books for all emotions.'}, status=status.HTTP_200_OK)

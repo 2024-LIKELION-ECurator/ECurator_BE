@@ -6,4 +6,5 @@ urlpatterns = [
     path('emotion-history/', MyMoodHistoryView.as_view()),
     path('store-all-movies/', StoreAllMovies.as_view()),
     path('fetch-all-music/', FetchAllMusicView.as_view(), name='fetch_all_music'),
+    path('fetch-all-book/', FetchAllBookView.as_view(), name='fetch_all_book'),
 ]
