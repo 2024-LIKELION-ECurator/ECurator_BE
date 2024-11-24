@@ -10,16 +10,9 @@ from datetime import date
 from .models import *
 from .serializers import *
 from .utils import *
+from diary.models import Diary
 
-"""
-- 작성자 연결
-- 감정 update
-- 다이어리 끌어오기
-- is authen
-- permission_classes = [AllowAny]
-- 응답코드
-"""
-
+# 캘린더/메인페이지
 class MyMoodHistoryView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -30,9 +23,20 @@ class MyMoodHistoryView(APIView):
             date__month=month
         ).order_by('date')
 
-        serializer = MyMoodHistorySerializer(emotions, many=True)
+        diaries = Diary.objects.filter(
+            author=request.user,
+            created_at__year=year,
+            created_at__month=month
+        )
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        emo_serializer = MyMoodHistorySerializer(emotions, many=True)
+        dia_serializer = MyDiarySerializer(diaries, many=True)
+
+        response = {
+            "emotion": emo_serializer.data,
+            "diary": dia_serializer.data
+        }
+        return Response(response, status=status.HTTP_200_OK)
 
     def post(self, request):
         emotion_name = request.data.get('emotion')
@@ -41,13 +45,13 @@ class MyMoodHistoryView(APIView):
         try:
             emotion = Emotion.objects.get(name=emotion_name)
         except Emotion.DoesNotExist:
-            return Response({"error": "존재하지 않는 감정입니다."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "존재하지 않는 감정입니다."}, status=status.HTTP_202_ACCEPTED)
 
         # 현재 로그인한 사용자의 해당 날짜 감정 기록 조회
         user_mood_history = MyMoodHistory.objects.filter(author=request.user, date=date)
 
         if user_mood_history.exists():
-            return Response({"error": "해당 날짜에 이미 감정이 기록되어 있습니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "해당 날짜에 이미 감정이 기록되어 있습니다."}, status=status.HTTP_202_ACCEPTED)
 
         # 감정 기록 생성 및 저장
         mood_history = MyMoodHistory(author=request.user, emotion=emotion, date=date)
@@ -60,18 +64,18 @@ class MyMoodHistoryView(APIView):
         try:
             mood_history = MyMoodHistory.objects.get(id=id, author=request.user)
         except MyMoodHistory.DoesNotExist:
-            return Response({"error": "해당 감정 기록이 존재하지 않거나, 접근할 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "해당 감정 기록이 존재하지 않거나, 접근할 수 없습니다."}, status=status.HTTP_202_ACCEPTED)
 
         # 수정 가능한 날짜가 오늘인지 확인
         if mood_history.date != date.today():
-            return Response({"error": "오늘 작성한 감정만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "오늘 작성한 감정만 수정할 수 있습니다."}, status=status.HTTP_202_ACCEPTED)
 
         emotion_name = request.data.get('emotion')
 
         try:
             emotion = Emotion.objects.get(name=emotion_name)
         except Emotion.DoesNotExist:
-            return Response({"error": "존재하지 않는 감정입니다."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "존재하지 않는 감정입니다."}, status=status.HTTP_202_ACCEPTED)
 
         # 감정 기록 업데이트
         mood_history.emotion = emotion
@@ -80,26 +84,7 @@ class MyMoodHistoryView(APIView):
         serializer = MyMoodHistorySerializer(mood_history)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-# movie api
-class StoreAllMovies(APIView):
-    def post(self, request):
-        emotions = ["happy", "sad", "surprised", "loving", "sleepy", "nervous", "pensive", "relieved", "joyful"]
-        for emotion in emotions:
-            fetch_and_store_movies(emotion)
-        return Response({"message": "Movies for all emotions have been fetched and stored."})
-
-# music api
-class FetchAllMusicView(APIView):
-    def post(self, request, *args, **kwargs):
-        fetch_and_store_all_music()  # 모든 감정에 대한 음악을 가져오기
-        return Response({'message': 'Successfully fetched music for all emotions.'}, status=status.HTTP_200_OK)
-
-# book api
-class FetchAllBookView(APIView):
-    def post(self, request, *args, **kwargs):
-        fetch_and_store_books()  # 모든 감정에 대한 음악을 가져오기
-        return Response({'message': 'Successfully fetched books for all emotions.'}, status=status.HTTP_200_OK)
-
+# 메인 페이지
 class MainView(APIView):
     permission_classes = [AllowAny]  # 모든 사용자 접근 가능
 
@@ -115,13 +100,13 @@ class MainView(APIView):
         try:
             emotion = Emotion.objects.get(name=emotion_name)
         except Emotion.DoesNotExist:
-            return Response({"error": "존재하지 않는 감정입니다."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "존재하지 않는 감정입니다."}, status=status.HTTP_202_ACCEPTED)
 
         # 현재 로그인한 사용자의 해당 날짜 감정 기록 조회
         user_mood_history = MyMoodHistory.objects.filter(author=request.user, date=today_date)
 
         if user_mood_history.exists():
-            return Response({"error": "해당 날짜에 이미 감정이 기록되어 있습니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "해당 날짜에 이미 감정이 기록되어 있습니다."}, status=status.HTTP_202_ACCEPTED)
 
         # 감정 기록 생성 및 저장
         mood_history = MyMoodHistory(
@@ -134,14 +119,14 @@ class MainView(APIView):
         serializer = MyMoodHistorySerializer(mood_history)
         return Response({"id": mood_history.id, "data": serializer.data}, status=status.HTTP_201_CREATED)
 
-
-
-
+# 메인 콘텐츠
 class MainContentView(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request, emotion):
         # 감정이 유효한지 확인
         if not Emotion.objects.filter(name=emotion).exists():
-            return Response({"error": "Invalid emotion."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid emotion."}, status=status.HTTP_202_ACCEPTED)
 
         movies = Movie.objects.filter(emotion__name=emotion)
         musics = Music.objects.filter(emotion__name=emotion)
@@ -167,3 +152,23 @@ class MainContentView(APIView):
         }
 
         return Response(response, status=status.HTTP_200_OK)
+
+# movie api
+class StoreAllMovies(APIView):
+    def post(self, request):
+        emotions = ["happy", "sad", "surprised", "loving", "sleepy", "nervous", "pensive", "relieved", "joyful"]
+        for emotion in emotions:
+            fetch_and_store_movies(emotion)
+        return Response({"message": "Movies for all emotions have been fetched and stored."})
+
+# music api
+class FetchAllMusicView(APIView):
+    def post(self, request, *args, **kwargs):
+        fetch_and_store_all_music()  # 모든 감정에 대한 음악을 가져오기
+        return Response({'message': 'Successfully fetched music for all emotions.'}, status=status.HTTP_200_OK)
+
+# book api
+class FetchAllBookView(APIView):
+    def post(self, request, *args, **kwargs):
+        fetch_and_store_books()  # 모든 감정에 대한 음악을 가져오기
+        return Response({'message': 'Successfully fetched books for all emotions.'}, status=status.HTTP_200_OK)

@@ -1,5 +1,11 @@
 from rest_framework import serializers
 from .models import *
+from diary.models import Diary
+
+class MyDiarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Diary
+        fields = ['title', 'content', 'created_at']
 
 class MyMoodHistorySerializer(serializers.ModelSerializer):
     emotion_name = serializers.SerializerMethodField()
