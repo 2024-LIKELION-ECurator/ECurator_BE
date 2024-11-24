@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from decouple import config # env 파일
+from datetime import timedelta # access 유효시간
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -141,3 +142,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # 액세스 토큰 유효 시간 설정 (예: 5분)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # 리프레시 토큰 유효 시간 설정 (예: 1일)
+    'ROTATE_REFRESH_TOKENS': True,                    # 리프레시 토큰 회전 여부
+    'BLACKLIST_AFTER_ROTATION': True,                  # 회전 후 블랙리스트 여부
+}

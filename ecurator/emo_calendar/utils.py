@@ -1,14 +1,17 @@
 import requests
 from .models import *
 from decouple import config # env 파일
+import json
 
-# 영화
+# 영화 - tmdb
 TMDB_API_KEY = config('TMDB_API_KEY')
-# 음악
+# 음악 - spotify
 SPOTIFY_CLIENT_ID = config('SPOTIFY_CLIENT_ID')
 SPOTIFY_CLIENT_SECRET = config('SPOTIFY_CLIENT_SECRET')
+# 책 - 알라딘
+ALADIN_API_KEY = config('ALADIN_API_KEY')
 
-# 감정에 따른 키워드 정의
+# 영화 - 감정에 따른 키워드 정의
 EMOTION_KEYWORDS = {
     "happy": ["joyful", "funny", "cheerful", "행복"],
     "sad": ["emotional", "melancholic", "heartfelt", "슬픈"],
@@ -44,7 +47,7 @@ def fetch_and_store_movies(emotion_name):
             page = 1  # page 변수를 초기화
 
             while len(region_movies) < 20:
-                url = f'https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={keyword}&region={region}&language=ko&include_adult=false&page={page}'
+                url = f'https://api.themoviedb.org/3/search/movie?api_key={TMDB_API_KEY}&query={keyword}&region={region}&language=ko&include_adult=false&sort_by=popularity.desc&page={page}'
                 try:
                     response = requests.get(url)
                     response.raise_for_status()
@@ -90,14 +93,18 @@ def fetch_and_store_movies(emotion_name):
             continue  # 포함되어 있다면 저장하지 않고 넘어감
         
         # 이미 데이터베이스에 존재하는지 확인
-        if Movie.objects.filter(title=title).exists():
-            continue  # 제목이 이미 존재하면 저장하지 않고 넘어감
+        #if Movie.objects.filter(title=title).exists():
+        #    continue  # 제목이 이미 존재하면 저장하지 않고 넘어감
 
         genre_ids = item['genre_ids']  # 장르 ID 목록
         genre_names = get_genre_names(genre_ids)  # 장르 이름 가져오기
         
         # 감독 정보 가져오기
         author = get_movie_director(item['id'])
+
+        # 이미 데이터베이스에 존재하는지 확인
+        if Movie.objects.filter(title=title, author=author).exists():
+            continue  # 제목이 이미 존재하면 저장하지 않고 넘어감
         
         # 영화 객체 생성 및 저장
         Movie.objects.create(  # get_or_create 대신 create 사용
@@ -189,3 +196,75 @@ def fetch_and_store_all_music():
             )
 
         print(f"Stored {len(results)} songs for emotion '{emotion.name}'.")
+
+
+"""
+책
+"""
+
+def fetch_and_store_books():
+    # 모든 감정 가져오기
+    emotions = Emotion.objects.all()
+    
+    # 키워드 정의
+    query_keywords = {
+        'happy': ['행복', '기쁨', '즐거움', '행복한', '명랑'],
+        'sad': ['슬픔', '우울', '슬픈', '애통', '상실'],
+        'surprised': ['놀라운', '충격', '놀라움', '의외', '뜻밖의'],
+        'loving': ['사랑', '애정', '사랑하는', '연애', '귀여운'],
+        'sleepy': ['차분함', '졸림', '피곤', '안정', '휴식'],
+        'nervous': ['긴장', '불안', '초조', '두려움', '떨림'],
+        'pensive': ['사려깊은', '생각하는', '명상', '고민', '숙고'],
+        'relieved': ['안정', '편안', '안도', '해방감', '쉬는'],
+        'joyful': ['즐거운', '기쁜', '즐거움', '희망', '환희']
+    }
+
+    for emotion in emotions:
+        keywords = query_keywords.get(emotion.name, [])
+        for keyword in keywords:  # 각 키워드에 대해 반복
+            # Aladin API 호출
+            url = "https://www.aladin.co.kr/ttb/api/ItemSearch.aspx"
+            params = {
+                'ttbkey': ALADIN_API_KEY,
+                'Query': keyword,  # 각 키워드 사용
+                'QueryType': 'Title',
+                'SearchTarget': 'Book',
+                'MaxResults': 30, 
+                'start': 1,
+                'output': 'js',  # JSON 형식으로 응답
+            }
+
+            try:
+                response = requests.get(url, params=params)
+                response.raise_for_status()
+
+                # 응답 내용 확인 및 정리
+                raw_data = response.text.strip()
+                if raw_data.endswith(';'):
+                    raw_data = raw_data[:-1]  # 마지막 ';' 제거
+
+                # JSON 파싱
+                data = json.loads(raw_data)
+                
+                items = data.get('item', [])
+                for item in items:
+                    title = item.get('title', '')
+                    author = item.get('author', '')
+
+                    # 책 객체 생성 및 저장
+                    try:
+                        if Book.objects.filter(title=title, author=author, emotion=emotion).exists():
+                            continue
+
+                        Book.objects.create(
+                            title=title,
+                            author=author,
+                            emotion=emotion
+                        )
+                    except Exception as e:
+                        print(f"책 저장 오류: {e}, 제목: {title}, 저자: {author}")
+            
+            except requests.exceptions.RequestException as e:
+                print(f"API 요청 실패: {e}")
+            except json.JSONDecodeError as e:
+                print(f"JSON 디코딩 오류: {e}")
