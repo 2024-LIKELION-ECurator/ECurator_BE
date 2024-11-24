@@ -45,6 +45,6 @@ class Book(models.Model):
         return f"{self.title}"
 
 class MyMoodHistory(models.Model):
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="moodhistories")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE, related_name="moodhistories")
     emotion = models.ForeignKey(Emotion, on_delete=models.CASCADE)
     date = models.DateField()
