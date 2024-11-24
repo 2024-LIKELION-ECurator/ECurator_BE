@@ -10,3 +10,23 @@ class MyMoodHistorySerializer(serializers.ModelSerializer):
 
     def get_emotion_name(self, obj):
         return obj.emotion.name
+
+class MusicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Music
+        fields = ("title", "author")
+
+class MovieSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Movie
+        fields = ("title", "author")
+
+class BookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Book
+        fields = ("title", "author")
+
+class MainSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Emotion
+        fields = ["name"]
