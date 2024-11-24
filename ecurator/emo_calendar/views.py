@@ -102,11 +102,12 @@ class MainView(APIView):
         except Emotion.DoesNotExist:
             return Response({"error": "존재하지 않는 감정입니다."}, status=status.HTTP_202_ACCEPTED)
 
-        # 현재 로그인한 사용자의 해당 날짜 감정 기록 조회
-        user_mood_history = MyMoodHistory.objects.filter(author=request.user, date=today_date)
+        if request.user.is_authenticated:
+            # 현재 로그인한 사용자의 해당 날짜 감정 기록 조회
+            user_mood_history = MyMoodHistory.objects.filter(author=request.user, date=today_date)
 
-        if user_mood_history.exists():
-            return Response({"error": "해당 날짜에 이미 감정이 기록되어 있습니다."}, status=status.HTTP_202_ACCEPTED)
+            if user_mood_history.exists():
+                return Response({"error": "해당 날짜에 이미 감정이 기록되어 있습니다."}, status=status.HTTP_202_ACCEPTED)
 
         # 감정 기록 생성 및 저장
         mood_history = MyMoodHistory(
