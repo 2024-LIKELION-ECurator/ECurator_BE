@@ -13,7 +13,7 @@ class RegisterView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "User registered successfully!"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_200_OK)
 
 # 로그인
 class LoginView(APIView):
@@ -27,7 +27,7 @@ class LoginView(APIView):
                 "refresh": str(refresh),
                 "access": str(refresh.access_token)
             }, status=status.HTTP_200_OK)
-        return Response({"error": "아이디/비밀번호를 정확히 입력해주세요."}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"error": "아이디/비밀번호를 정확히 입력해주세요."}, status=status.HTTP_200_OK)
 
 # 로그아웃
 class LogoutView(APIView):
@@ -44,7 +44,7 @@ class LogoutView(APIView):
 
             return Response({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(e)}, status=status.HTTP_200_OK)
         
 # 마이페이지
 class MyPageView(APIView):

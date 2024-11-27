@@ -14,7 +14,7 @@ class DiaryCreateView(APIView):
         if serializer.is_valid():
             serializer.save(author=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_200_OK)
 
 # Update
 class DiaryUpdateView(APIView):
@@ -24,13 +24,13 @@ class DiaryUpdateView(APIView):
         try:
             diary = Diary.objects.get(pk=pk, author=request.user)
         except Diary.DoesNotExist:
-            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_200_OK)
         
         serializer = DiarySerializer(diary, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_200_OK)
 
 # Detail
 class DiaryDetailView(APIView):
@@ -40,7 +40,7 @@ class DiaryDetailView(APIView):
         try:
             diary = Diary.objects.get(pk=pk, author=request.user)
         except Diary.DoesNotExist:
-            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_200_OK)
         
         serializer = DiarySerializer(diary)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -53,7 +53,7 @@ class DiaryDeleteView(APIView):
         try:
             diary = Diary.objects.get(pk=pk, author=request.user)
         except Diary.DoesNotExist:
-            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_200_OK)
         
         diary.delete()
         return Response({"message": "Diary deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
