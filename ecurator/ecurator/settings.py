@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from decouple import config # env 파일
+from datetime import timedelta # access 유효시간
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,14 +22,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-js#s!(!7b+l4$d!v_x8o4fw@dgfsc#5z!7-#t0$%va(7s30pag'
+# 비밀 키 로드
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
+AUTH_USER_MODEL = 'users.CustomUser'
 
 # Application definition
 
@@ -39,11 +43,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # 패키지
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
+    'corsheaders',
 
     # 앱
+    'users',
+    'diary',
+    'emo_calendar',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -73,6 +83,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ecurator.wsgi.application'
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -121,7 +136,18 @@ USE_TZ = False
 
 STATIC_URL = 'static/'
 
+# Media 파일 설정
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),  # 액세스 토큰 유효 시간 설정 (예: 5분)
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # 리프레시 토큰 유효 시간 설정 (예: 1일)
+    'ROTATE_REFRESH_TOKENS': True,                    # 리프레시 토큰 회전 여부
+    'BLACKLIST_AFTER_ROTATION': True,                  # 회전 후 블랙리스트 여부
+}
