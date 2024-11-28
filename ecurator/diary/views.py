@@ -24,7 +24,7 @@ class DiaryUpdateView(APIView):
         try:
             diary = Diary.objects.get(pk=pk, author=request.user)
         except Diary.DoesNotExist:
-            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_200_OK)
         
         serializer = DiarySerializer(diary, data=request.data, partial=True)
         if serializer.is_valid():
@@ -40,10 +40,10 @@ class DiaryDetailView(APIView):
         try:
             diary = Diary.objects.get(pk=pk, author=request.user)
         except Diary.DoesNotExist:
-            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_200_OK)
         
         serializer = DiarySerializer(diary)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
 # Delete
 class DiaryDeleteView(APIView):
@@ -53,10 +53,10 @@ class DiaryDeleteView(APIView):
         try:
             diary = Diary.objects.get(pk=pk, author=request.user)
         except Diary.DoesNotExist:
-            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Diary not found or not authorized"}, status=status.HTTP_202_ACCEPTED)
         
         diary.delete()
-        return Response({"message": "Diary deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Diary deleted successfully"}, status=status.HTTP_200_OK)
 
 # List
 class DiaryListView(APIView):

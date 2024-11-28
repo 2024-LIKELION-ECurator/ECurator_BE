@@ -27,7 +27,7 @@ class LoginView(APIView):
                 "refresh": str(refresh),
                 "access": str(refresh.access_token)
             }, status=status.HTTP_200_OK)
-        return Response({"error": "아이디/비밀번호를 정확히 입력해주세요."}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"error": "아이디/비밀번호를 정확히 입력해주세요."}, status=status.HTTP_200_OK)
 
 # 로그아웃
 class LogoutView(APIView):
@@ -36,13 +36,13 @@ class LogoutView(APIView):
             # 클라이언트에서 리프레시 토큰 전달
             refresh_token = request.data.get("refresh")
             if not refresh_token:
-                return Response({"error": "Refresh token is required"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Refresh token is required"}, status=status.HTTP_202_ACCEPTED)
 
             # 리프레시 토큰을 블랙리스트에 추가
             token = RefreshToken(refresh_token)
             token.blacklist()
 
-            return Response({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+            return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
